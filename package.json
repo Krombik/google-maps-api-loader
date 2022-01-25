@@ -1,5 +1,5 @@
 {
-  "name": "google-maps-api-loader",
+  "name": "google-maps-js-api-loader",
   "version": "1.0.0",
   "description": "Wrapper for the loading of Google Maps JavaScript API script in the browser",
   "repository": {
