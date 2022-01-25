@@ -40,10 +40,11 @@
     "dist"
   ],
   "keywords": [
-    "clustering",
-    "markers",
-    "cluster",
-    "points",
-    "supercluster"
+    "google",
+    "maps",
+    "asynchronous",
+    "async",
+    "loader",
+    "browser"
   ]
 }
