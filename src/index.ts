@@ -1,8 +1,8 @@
 import equal from "fast-deep-equal";
-import { LoaderCallbacks, LoaderOptions } from "./types";
+import { LoaderOptions } from "./types";
 import { CALLBACK_NAME, handleScript, noop } from "./utils";
 
-export { LoaderCallbacks, LoaderOptions };
+export { LoaderOptions };
 
 export enum LoaderStatus {
   NONE,
@@ -20,10 +20,7 @@ class Loader {
     return this._status;
   }
 
-  static async load(
-    options: LoaderOptions,
-    callbacks: Partial<LoaderCallbacks> = {}
-  ) {
+  static async load(options: LoaderOptions, onLoadingStart?: () => void) {
     if (!this._options) {
       if (window.google && window.google.maps) {
         throw new Error("Google Maps already loaded");
@@ -33,32 +30,26 @@ class Loader {
 
       this._status = LoaderStatus.LOADING;
 
-      (callbacks.onLoadingStart || noop)();
+      (onLoadingStart || noop)();
 
-      let resolve: () => void;
       let reject: (err: ErrorEvent) => void;
 
-      const promise = new Promise<void>((_resolve, _reject) => {
-        resolve = _resolve;
-        reject = _reject;
-      })
-        .then(() => {
-          //@ts-expect-error
-          delete window[CALLBACK_NAME];
-
+      this._promise = new Promise<void>((_resolve, _reject) => {
+        window[CALLBACK_NAME] = () => {
           this._status = LoaderStatus.LOADED;
 
-          (callbacks.onLoaded || noop)();
-        })
-        .catch((err: ErrorEvent) => {
+          _resolve();
+
+          //@ts-expect-error
+          delete window[CALLBACK_NAME];
+        };
+
+        reject = (err) => {
           this._status = LoaderStatus.ERROR;
 
-          (callbacks.onError || noop)(err);
-        });
-
-      this._promise = promise;
-
-      window[CALLBACK_NAME] = resolve!;
+          _reject(err);
+        };
+      });
 
       handleScript(options, reject!);
     } else if (!equal(this._options, options)) {
