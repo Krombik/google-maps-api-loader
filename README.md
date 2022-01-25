@@ -1,4 +1,4 @@
-# google-maps-loader
+# google-maps-api-loader
 
 ## Description
 
@@ -7,7 +7,7 @@ Async loader for google maps api
 ## Example
 
 ```ts
-import Loader from "google-maps-loader";
+import Loader from "google-maps-api-loader";
 
 await Loader.load({
   apiKey: API_KEY,
