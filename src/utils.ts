@@ -33,7 +33,7 @@ export const handleScript = (
       url,
       query: { ...params, callback: CALLBACK_NAME },
     },
-    { skipEmptyString: true }
+    { skipEmptyString: true, arrayFormat: "comma" }
   );
 
   script.type = "text/javascript";
