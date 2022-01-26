@@ -16,10 +16,26 @@ class Loader {
   private static _options: LoaderOptions;
   private static _promise: Promise<void>;
 
+  /** Current status of {@link Loader Loader} */
   static get status() {
     return this._status;
   }
 
+  /** Promise from {@link Loader.load load} first call */
+  static get completion() {
+    return this._promise;
+  }
+
+  /** List of [libraries](https://developers.google.com/maps/documentation/javascript/libraries) from {@link Loader.load load} options */
+  static get libraries() {
+    return this._options.libraries || [];
+  }
+
+  /**
+   * Asynchronously loads Google Maps JavaScript API with given options, can be called multiple times
+   * @returns promise from the first call
+   * @throws error if google.maps already exists on the first call or if the options are different from the first call
+   */
   static async load(options: LoaderOptions, onLoadingStart?: () => void) {
     if (!this._options) {
       if (window.google && window.google.maps) {

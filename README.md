@@ -13,6 +13,17 @@ await Loader.load({
   apiKey: API_KEY,
   // ...some other options
 });
+
+// or
+
+// start load in root file
+Loader.load({
+  apiKey: API_KEY,
+  // ...some other options
+});
+
+// and then await it in nested files
+await Loader.completion;
 ```
 
 ## API
@@ -32,6 +43,13 @@ Asynchronously loads Google Maps JavaScript API with given options, can be calle
 ### status
 
 ```ts
+enum LoaderStatus {
+  NONE, // default value
+  LOADING,
+  LOADED,
+  ERROR,
+}
+
 static status: LoaderStatus
 ```
 
@@ -39,22 +57,29 @@ Current status of `Loader`
 
 ---
 
-### LoaderStatus
+### completion
 
 ```ts
-enum LoaderStatus {
-  NONE,
-  LOADING,
-  LOADED,
-  ERROR,
-}
+static completion: Promise<void>
 ```
+
+Promise from [load](#load) first call
+
+---
+
+### libraries
+
+```ts
+static libraries: Libraries
+```
+
+List of [libraries](https://developers.google.com/maps/documentation/javascript/libraries) from [options](#loaderoptions)
 
 ---
 
 ### LoaderOptions
 
-Options structure is same to [@googlemaps/js-api-loader](https://github.com/googlemaps/js-api-loader)
+Options structure is similar to [@googlemaps/js-api-loader](https://github.com/googlemaps/js-api-loader)
 
 ---
 
