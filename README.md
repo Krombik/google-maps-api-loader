@@ -9,34 +9,35 @@ Async loader for google maps api
 ```ts
 import Loader from "google-maps-js-api-loader";
 
-await Loader.load({
+Loader.options = {
   apiKey: API_KEY,
   // ...some other options
-});
+};
 
-// or
-
-// start load in root file
-Loader.load({
-  apiKey: API_KEY,
-  // ...some other options
-});
-
-// and then await it in nested files
-await Loader.completion;
+await Loader.load();
 ```
 
 ## API
 
+### options
+
+```ts
+static options: LoaderOptions
+```
+
+Loader options (query parameters for script url and some script attributes), should be set before [load](#load) execution
+
+---
+
 ### load
 
 ```ts
-async static load(options: LoaderOptions, onLoadingStart?: () => void): Promise<void>
+async static load(): Promise<void>
 ```
 
-Asynchronously loads Google Maps JavaScript API with given options, can be called multiple times, but always returns promise from the first call
+Starts loading of Google Maps JavaScript API with given [options](#options) (if it not loaded yet), returns [completion](#completion)
 
-> Note: it throws an error if google.maps already exists on the first call or if the options are different from the first call
+> throws error if google.maps already loaded by something else or if no [options](#options) was provided
 
 ---
 
@@ -63,23 +64,7 @@ Current status of `Loader`
 static completion: Promise<void>
 ```
 
-Promise from [load](#load) first call
-
----
-
-### libraries
-
-```ts
-static libraries: Libraries
-```
-
-List of [libraries](https://developers.google.com/maps/documentation/javascript/libraries) from [options](#loaderoptions)
-
----
-
-### LoaderOptions
-
-Options structure is similar to [@googlemaps/js-api-loader](https://github.com/googlemaps/js-api-loader)
+Promise of loading, it has pending status even if [load](#load) not called yet (can be useful if you want to do something after loading done, but don't want to start loading)
 
 ---
 

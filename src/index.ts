@@ -1,4 +1,3 @@
-import equal from "fast-deep-equal";
 import { LoaderOptions } from "./types";
 import { CALLBACK_NAME, handleScript, noop } from "./utils";
 
@@ -11,68 +10,81 @@ export enum LoaderStatus {
   ERROR,
 }
 
+type HiddenFields = {
+  promise: Promise<void>;
+  resolve(): void;
+  reject(err: ErrorEvent): void;
+  status: LoaderStatus;
+};
+
+//@ts-expect-error
+const hiddenFields: HiddenFields = {
+  promise: new Promise<void>((resolve, reject) => {
+    Object.defineProperties(hiddenFields, {
+      resolve: { value: resolve },
+      reject: { value: reject },
+    });
+  }),
+  status: LoaderStatus.NONE,
+};
+
 class Loader {
-  private static _status = LoaderStatus.NONE;
-  private static _options: LoaderOptions;
-  private static _promise: Promise<void>;
+  static options: LoaderOptions;
 
-  /** Current status of {@link Loader Loader} */
+  static onLoadingStart = noop;
+
+  /** Current status of {@link Loader} */
   static get status() {
-    return this._status;
-  }
-
-  /** Promise from {@link Loader.load load} first call */
-  static get completion() {
-    return this._promise;
-  }
-
-  /** List of [libraries](https://developers.google.com/maps/documentation/javascript/libraries) from {@link Loader.load load} options */
-  static get libraries() {
-    return this._options.libraries || [];
+    return hiddenFields.status;
   }
 
   /**
-   * Asynchronously loads Google Maps JavaScript API with given options, can be called multiple times
-   * @returns promise from the first call
-   * @throws error if google.maps already exists on the first call or if the options are different from the first call
+   * Promise of loading, it has pending status even if {@link load} not called yet (can be useful if you want to do something after loading done, but don't want to start loading)
    */
-  static async load(options: LoaderOptions, onLoadingStart?: () => void) {
-    if (!this._options) {
+  static get completion() {
+    return hiddenFields.promise;
+  }
+
+  /**
+   * Starts loading of Google Maps JavaScript API with given {@link options} (if it not loaded yet)
+   * @returns {} {@link completion}
+   * @throws error if {@link google.maps} already loaded by something else or if no {@link options} was provided
+   */
+  static load() {
+    if (hiddenFields.status === LoaderStatus.NONE) {
+      if (!this.options) {
+        hiddenFields.status = LoaderStatus.ERROR;
+
+        throw new Error("no options was provided");
+      }
+
       if (window.google && window.google.maps) {
+        hiddenFields.status = LoaderStatus.ERROR;
+
         throw new Error("Google Maps already loaded");
       }
 
-      this._options = options;
+      hiddenFields.status = LoaderStatus.LOADING;
 
-      this._status = LoaderStatus.LOADING;
+      this.onLoadingStart();
 
-      (onLoadingStart || noop)();
+      window[CALLBACK_NAME] = () => {
+        hiddenFields.status = LoaderStatus.LOADED;
 
-      let reject: (err: ErrorEvent) => void;
+        hiddenFields.resolve();
 
-      this._promise = new Promise<void>((_resolve, _reject) => {
-        window[CALLBACK_NAME] = () => {
-          this._status = LoaderStatus.LOADED;
+        //@ts-expect-error
+        delete window[CALLBACK_NAME];
+      };
 
-          _resolve();
+      handleScript(this.options, (err) => {
+        hiddenFields.status = LoaderStatus.ERROR;
 
-          //@ts-expect-error
-          delete window[CALLBACK_NAME];
-        };
-
-        reject = (err) => {
-          this._status = LoaderStatus.ERROR;
-
-          _reject(err);
-        };
+        hiddenFields.reject(err);
       });
-
-      handleScript(options, reject!);
-    } else if (!equal(this._options, options)) {
-      throw new Error("Loader must not be called again with different options");
     }
 
-    return this._promise;
+    return hiddenFields.promise;
   }
 }
 
