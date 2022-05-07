@@ -10,23 +10,15 @@ export enum LoaderStatus {
   ERROR,
 }
 
-type HiddenFields = {
-  promise: Promise<void>;
-  resolve(): void;
-  reject(err: ErrorEvent): void;
-  status: LoaderStatus;
-};
+let resolve: () => void;
+let reject: (err: ErrorEvent) => void;
 
-//@ts-expect-error
-const hiddenFields: HiddenFields = {
-  promise: new Promise<void>((resolve, reject) => {
-    Object.defineProperties(hiddenFields, {
-      resolve: { value: resolve },
-      reject: { value: reject },
-    });
-  }),
-  status: LoaderStatus.NONE,
-};
+const promise = new Promise<void>((_resolve, _reject) => {
+  resolve = _resolve;
+  reject = _reject;
+});
+
+let status = LoaderStatus.NONE;
 
 class Loader {
   static options: LoaderOptions;
@@ -35,14 +27,14 @@ class Loader {
 
   /** Current status of {@link Loader} */
   static get status() {
-    return hiddenFields.status;
+    return status;
   }
 
   /**
    * Promise of loading, it has pending status even if {@link load} not called yet (can be useful if you want to do something after loading done, but don't want to start loading)
    */
   static get completion() {
-    return hiddenFields.promise;
+    return promise;
   }
 
   /**
@@ -51,40 +43,40 @@ class Loader {
    * @throws error if {@link google.maps} already loaded by something else or if no {@link options} was provided
    */
   static load() {
-    if (hiddenFields.status === LoaderStatus.NONE) {
+    if (status === LoaderStatus.NONE) {
       if (!this.options) {
-        hiddenFields.status = LoaderStatus.ERROR;
+        status = LoaderStatus.ERROR;
 
         throw new Error("no options was provided");
       }
 
       if (window.google && window.google.maps) {
-        hiddenFields.status = LoaderStatus.ERROR;
+        status = LoaderStatus.ERROR;
 
         throw new Error("Google Maps already loaded");
       }
 
-      hiddenFields.status = LoaderStatus.LOADING;
+      status = LoaderStatus.LOADING;
 
       this.onLoadingStart();
 
       window[CALLBACK_NAME] = () => {
-        hiddenFields.status = LoaderStatus.LOADED;
+        status = LoaderStatus.LOADED;
 
-        hiddenFields.resolve();
+        resolve();
 
         //@ts-expect-error
         delete window[CALLBACK_NAME];
       };
 
       handleScript(this.options, (err) => {
-        hiddenFields.status = LoaderStatus.ERROR;
+        status = LoaderStatus.ERROR;
 
-        hiddenFields.reject(err);
+        reject(err);
       });
     }
 
-    return hiddenFields.promise;
+    return promise;
   }
 }
 
