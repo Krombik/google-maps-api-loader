@@ -1,7 +1,7 @@
-import type { LoaderOptions } from "./types";
+import type { LoaderOptions, Library } from "./types";
 import { CALLBACK_NAME, noop } from "./utils";
 
-export type { LoaderOptions };
+export type { LoaderOptions, Library };
 
 export enum LoaderStatus {
   NONE,
@@ -10,26 +10,76 @@ export enum LoaderStatus {
   ERROR,
 }
 
+type OnError = (err: ErrorEvent | Error) => void;
+
+type RunningStatus =
+  | LoaderStatus.LOADING
+  | LoaderStatus.LOADED
+  | LoaderStatus.ERROR;
+
 class Loader {
   private static _resolve?: () => void;
-  private static _reject?: (err: ErrorEvent | Error) => void;
+  private static _reject?: OnError;
   private static _options?: LoaderOptions;
 
-  /**
-   * @throws error if options will be set more then 1 time
-   */
+  private static [1]? = new Set<() => void>();
+  private static [2]? = new Set<() => void>();
+  private static [3]? = new Set<OnError>();
+
+  private static _runListeners?(
+    status: RunningStatus,
+    fn: (...args: any[]) => void,
+    arg?: any
+  ) {
+    Loader.status = status;
+
+    fn(arg);
+
+    const iterator = Loader[status]!.values();
+
+    for (let i = Loader[status]!.size; i--; ) {
+      iterator.next().value(arg);
+    }
+  }
+
+  private static _cleanup?(status: RunningStatus) {
+    Loader[status]!.clear();
+
+    delete Loader[status];
+  }
+
   static setOptions(options: LoaderOptions) {
-    Loader.setOptions = () => {
-      throw new Error("options already set");
-    };
+    Loader.setOptions = noop;
 
     Loader._options = options;
   }
 
   /**
-   * Callback which will be fired after loading starts
+   * Starts listening for given {@link status} changes and calls the given {@link callback} when it does
+   * @returns a function that can be used to remove the listener, which can then be invoked in cleanup logic
    */
-  static onLoadingStart = noop;
+  static addListener(
+    status: LoaderStatus.LOADING | LoaderStatus.LOADED,
+    callback: () => void
+  ): () => void;
+  static addListener(status: LoaderStatus.ERROR, callback: OnError): () => void;
+
+  static addListener(
+    status: Exclude<LoaderStatus, LoaderStatus.NONE>,
+    callback: (...args: any[]) => void
+  ) {
+    const set = Loader[status];
+
+    if (set) {
+      set.add(callback);
+
+      return () => {
+        set.delete(callback);
+      };
+    }
+
+    return noop;
+  }
 
   /** Current status of {@link Loader} */
   static status: LoaderStatus = 0; // LoaderStatus.NONE
@@ -37,27 +87,36 @@ class Loader {
   /**
    * Promise of loading
    *
-   * **Resolves** if [load](#load) is success
+   * **Resolves** if {@link load} is success
    *
-   * **Rejects** when
+   * **Rejects**
    *
-   * - Maps JavaScript API was loaded outside of this library
-   * - no options was [set](#setoptions)
-   * - script loading failed
+   * - if {@link google.maps} was loaded outside of this library
+   * - if no options was {@link setOptions set}
+   * - if script loading failed
    */
   static readonly completion = new Promise<void>((resolve, reject) => {
-    Loader._resolve = () => {
-      Loader.status = 2; // LoaderStatus.LOADED
+    function handleSetStatus(
+      status: RunningStatus,
+      fn: (...args: any[]) => void
+    ) {
+      return (arg?: any) => {
+        Loader._runListeners!(status, fn, arg);
 
-      resolve();
-    };
-    Loader._reject = (err) => {
-      Loader.status = 3; // LoaderStatus.ERROR
+        Loader._cleanup!(2);
 
-      reject(err);
-    };
-  }).finally(() => {
-    delete window[CALLBACK_NAME];
+        Loader._cleanup!(3);
+
+        delete Loader._runListeners;
+
+        delete Loader._cleanup;
+
+        delete window[CALLBACK_NAME];
+      };
+    }
+
+    Loader._resolve = handleSetStatus(2, resolve);
+    Loader._reject = handleSetStatus(3, reject);
   });
 
   /**
@@ -81,9 +140,17 @@ class Loader {
       if (errorMessage) {
         reject(new Error(errorMessage));
       } else {
-        Loader.status = 1; // LoaderStatus.LOADING
+        Loader._runListeners!(1, noop);
 
-        Loader.onLoadingStart();
+        Loader._cleanup!(1);
+
+        let { retryCount = 2 } = options;
+
+        const { retryDelay = 2000 } = options;
+
+        const url = new URL(
+          options.url || "https://maps.googleapis.com/maps/api/js"
+        );
 
         const params = {
           key: options.apiKey,
@@ -98,10 +165,6 @@ class Loader {
           callback: CALLBACK_NAME,
         };
 
-        const url = new URL(
-          options.url || "https://maps.googleapis.com/maps/api/js"
-        );
-
         for (const key in params) {
           const param = params[key];
 
@@ -113,28 +176,22 @@ class Loader {
           }
         }
 
-        const src = url.toString();
-
-        let { retryCount = 2 } = options;
-
-        const { retryDelay = 2000 } = options;
-
         const createScript = () => {
-          const script = document.createElement("script");
-
           const onError = (err: ErrorEvent) => {
-            if (retryCount) {
+            if (retryCount--) {
               setTimeout(() => {
-                retryCount--;
-
-                document.head.removeChild(script);
-
                 createScript();
+
+                head.removeChild(script);
               }, retryDelay);
             } else {
               reject(err);
             }
           };
+
+          const script = document.createElement("script");
+
+          const { head } = document;
 
           script.type = "text/javascript";
 
@@ -150,7 +207,7 @@ class Loader {
             script.nonce = options.nonce!;
           }
 
-          script.src = src;
+          script.src = url.toString();
 
           script.addEventListener(
             "load",
@@ -162,7 +219,7 @@ class Loader {
 
           script.addEventListener("error", onError);
 
-          document.head.appendChild(script);
+          head.appendChild(script);
         };
 
         window[CALLBACK_NAME] = Loader._resolve!;

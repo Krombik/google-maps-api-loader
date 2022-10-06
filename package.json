@@ -1,7 +1,7 @@
 {
   "name": "google-maps-js-api-loader",
-  "version": "2.1.0",
-  "description": "Async loader for Maps JavaScript API",
+  "version": "2.2.0",
+  "description": "Google Maps JavaScript API loader",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Krombik/google-maps-loader.git"
@@ -32,7 +32,8 @@
     "typescript": "^4.8.4"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "keywords": [
     "google",
