@@ -2,7 +2,7 @@
 
 ## Description
 
-`Google Maps JavaScript API` loader
+Lightweight JavaScript library that simplifies the process of adding `Google Maps JavaScript API` to web application.
 
 ## Example
 

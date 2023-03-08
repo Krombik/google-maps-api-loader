@@ -1,7 +1,7 @@
 {
   "name": "google-maps-js-api-loader",
   "version": "2.3.0",
-  "description": "Google Maps JavaScript API loader",
+  "description": "A lightweight JavaScript library for loading the Google Maps JavaScript API",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Krombik/google-maps-loader.git"
