@@ -1,13 +1,13 @@
-export type Library =
+export type GoogleMapsLibrary =
   | "drawing"
   | "geometry"
   | "localContext"
   | "places"
   | "visualization";
 
-export type LoaderOptions = {
+export type GoogleMapsLoaderOptions = {
   /**
-   * Your [API key](https://developers.google.com/maps/documentation/javascript/get-api-key). The Maps JavaScript API will not load unless a valid API key is specified
+   * Your [API key](https://developers.google.com/maps/documentation/javascript/get-api-key)
    */
   apiKey: string;
   /**
@@ -16,7 +16,7 @@ export type LoaderOptions = {
    */
   channel?: string;
   /**
-   * @deprecated use {@link LoaderOptions.apiKey apiKey} instead
+   * @deprecated use {@link GoogleMapsLoaderOptions.apiKey apiKey} instead
    * @see https://developers.google.com/maps/premium/overview
    */
   client?: string;
@@ -27,7 +27,7 @@ export type LoaderOptions = {
   /**
    * Array of additional Maps JavaScript API [libraries](https://developers.google.com/maps/documentation/javascript/libraries) to load
    */
-  libraries?: Library[];
+  libraries?: GoogleMapsLibrary[];
   /**
    * The [language](https://developers.google.com/maps/documentation/javascript/localization) to use. This affects the names of controls, copyright notices, driving directions, and control labels, as well as the responses to service requests. See the [list of supported languages](https://developers.google.com/maps/faq#languagesupport)
    */
@@ -37,7 +37,7 @@ export type LoaderOptions = {
    */
   region?: string;
   /**
-   * @deprecated Passing `mapIds` is no longer required in the script tag
+   * @deprecated Passing `map_ids` is no longer required in the script tag
    */
   mapIds?: string[];
   /**

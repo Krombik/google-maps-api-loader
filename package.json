@@ -1,6 +1,6 @@
 {
   "name": "google-maps-js-api-loader",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "description": "Google Maps JavaScript API loader",
   "repository": {
     "type": "git",
@@ -14,27 +14,19 @@
   "homepage": "https://github.com/Krombik/google-maps-loader#readme",
   "type": "module",
   "source": "src/index.ts",
-  "exports": {
-    "require": "./dist/index.cjs",
-    "default": "./dist/index.modern.js"
-  },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.module.js",
-  "types": "./dist/index.d.ts",
-  "unpkg": "./dist/index.umd.js",
   "scripts": {
-    "build": "microbundle",
-    "start": "microbundle watch"
+    "build": "ts-node ./scripts/build.mts",
+    "release": "npm publish ./build"
   },
   "devDependencies": {
-    "@types/google.maps": "^3.50.2",
-    "microbundle": "^0.15.1",
-    "typescript": "^4.8.4"
+    "@swc/core": "^1.3.37",
+    "@types/google.maps": "^3.52.2",
+    "@types/node": "^18.14.6",
+    "prettier": "^2.8.4",
+    "ts-node": "^10.9.1",
+    "tsup": "^6.6.3",
+    "typescript": "^4.9.5"
   },
-  "files": [
-    "dist",
-    "src"
-  ],
   "keywords": [
     "google",
     "maps",
@@ -42,5 +34,8 @@
     "async",
     "loader",
     "browser"
-  ]
+  ],
+  "engines": {
+    "node": ">10"
+  }
 }

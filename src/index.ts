@@ -1,16 +1,16 @@
-import type { LoaderOptions, Library } from "./types";
-import { CALLBACK_NAME, noop } from "./utils";
+import type { GoogleMapsLoaderOptions, GoogleMapsLibrary } from "./types";
+import { CALLBACK_NAME, noop, getQueryParameterAcc } from "./utils";
 
-export type { LoaderOptions, Library };
+export type { GoogleMapsLoaderOptions, GoogleMapsLibrary };
 
-const enum _LoaderStatus {
+const enum _GoogleMapsLoaderStatus {
   NONE,
   LOADING,
   LOADED,
   ERROR,
 }
 
-export const LoaderStatus: typeof _LoaderStatus = {
+export const GoogleMapsLoaderStatus: typeof _GoogleMapsLoaderStatus = {
   NONE: 0,
   LOADING: 1,
   LOADED: 2,
@@ -19,43 +19,46 @@ export const LoaderStatus: typeof _LoaderStatus = {
 
 type OnError = (err: ErrorEvent | Error) => void;
 
-type RunningStatus = Exclude<_LoaderStatus, _LoaderStatus.NONE>;
+type RunningStatus = Exclude<
+  _GoogleMapsLoaderStatus,
+  _GoogleMapsLoaderStatus.NONE
+>;
 
-class Loader {
+class GoogleMapsLoader {
   private static _resolve?: () => void;
   private static _reject?: OnError;
-  private static _options?: LoaderOptions;
+  private static _options?: GoogleMapsLoaderOptions;
 
-  private static [_LoaderStatus.LOADING]? = new Set<() => void>();
-  private static [_LoaderStatus.LOADED]? = new Set<() => void>();
-  private static [_LoaderStatus.ERROR]? = new Set<OnError>();
+  private static [_GoogleMapsLoaderStatus.LOADING]? = new Set<() => void>();
+  private static [_GoogleMapsLoaderStatus.LOADED]? = new Set<() => void>();
+  private static [_GoogleMapsLoaderStatus.ERROR]? = new Set<OnError>();
 
   private static _runListeners(
     status: RunningStatus,
     fn: (...args: any[]) => void,
     arg?: any
   ) {
-    Loader.status = status;
+    GoogleMapsLoader.status = status;
 
     fn(arg);
 
-    const iterator = Loader[status]!.values();
+    const iterator = GoogleMapsLoader[status]!.values();
 
-    for (let i = Loader[status]!.size; i--; ) {
+    for (let i = GoogleMapsLoader[status]!.size; i--; ) {
       iterator.next().value(arg);
     }
   }
 
   private static _cleanup(status: RunningStatus) {
-    Loader[status]!.clear();
+    GoogleMapsLoader[status]!.clear();
 
-    delete Loader[status];
+    delete GoogleMapsLoader[status];
   }
 
-  static setOptions(options: LoaderOptions) {
-    Loader._options = options;
+  static setOptions(options: GoogleMapsLoaderOptions) {
+    GoogleMapsLoader._options = options;
 
-    Loader.setOptions = noop;
+    GoogleMapsLoader.setOptions = noop;
   }
 
   /**
@@ -63,11 +66,11 @@ class Loader {
    * @returns a function that can be used to remove the listener, which can then be invoked in cleanup logic
    */
   static addListener(
-    status: _LoaderStatus.LOADING | _LoaderStatus.LOADED,
+    status: _GoogleMapsLoaderStatus.LOADING | _GoogleMapsLoaderStatus.LOADED,
     callback: () => void
   ): () => void;
   static addListener(
-    status: _LoaderStatus.ERROR,
+    status: _GoogleMapsLoaderStatus.ERROR,
     callback: OnError
   ): () => void;
 
@@ -75,7 +78,7 @@ class Loader {
     status: RunningStatus,
     callback: (...args: any[]) => void
   ) {
-    const set = Loader[status];
+    const set = GoogleMapsLoader[status];
 
     if (set) {
       set.add(callback);
@@ -88,8 +91,8 @@ class Loader {
     return noop;
   }
 
-  /** Current status of {@link Loader} */
-  static status = _LoaderStatus.NONE;
+  /** Current status of {@link GoogleMapsLoader} */
+  static status = _GoogleMapsLoaderStatus.NONE;
 
   /**
    * Promise of loading
@@ -108,18 +111,24 @@ class Loader {
       fn: (...args: any[]) => void
     ) {
       return (arg?: any) => {
-        Loader._runListeners(status, fn, arg);
+        GoogleMapsLoader._runListeners(status, fn, arg);
 
-        Loader._cleanup(_LoaderStatus.LOADED);
+        GoogleMapsLoader._cleanup(_GoogleMapsLoaderStatus.LOADED);
 
-        Loader._cleanup(_LoaderStatus.ERROR);
+        GoogleMapsLoader._cleanup(_GoogleMapsLoaderStatus.ERROR);
 
-        delete window[CALLBACK_NAME];
+        delete window[CALLBACK_NAME as any];
       };
     }
 
-    Loader._resolve = handleSetStatus(_LoaderStatus.LOADED, resolve);
-    Loader._reject = handleSetStatus(_LoaderStatus.ERROR, reject);
+    GoogleMapsLoader._resolve = handleSetStatus(
+      _GoogleMapsLoaderStatus.LOADED,
+      resolve
+    );
+    GoogleMapsLoader._reject = handleSetStatus(
+      _GoogleMapsLoaderStatus.ERROR,
+      reject
+    );
   });
 
   /**
@@ -127,59 +136,29 @@ class Loader {
    * @returns ‎{@link completion}
    */
   static load() {
-    if (!Loader.status) {
+    if (!GoogleMapsLoader.status && typeof window != "undefined") {
       let errorMessage: string | undefined;
 
-      const options = Loader._options!;
+      const options = GoogleMapsLoader._options!;
 
-      const reject = Loader._reject!;
+      const reject = GoogleMapsLoader._reject!;
 
       if (!options) {
         errorMessage = "no options was set";
-      } else if (window.google?.maps) {
+      } else if (window.google && google.maps) {
         errorMessage = "google.maps already loaded";
       }
 
       if (errorMessage) {
         reject(new Error(errorMessage));
       } else {
-        Loader._runListeners(_LoaderStatus.LOADING, noop);
+        GoogleMapsLoader._runListeners(_GoogleMapsLoaderStatus.LOADING, noop);
 
-        Loader._cleanup(_LoaderStatus.LOADING);
-
-        const url = new URL(
-          options.url || "https://maps.googleapis.com/maps/api/js"
-        );
-
-        const params = {
-          key: options.apiKey,
-          v: options.version,
-          libraries: options.libraries,
-          channel: options.channel,
-          client: options.client,
-          language: options.language,
-          region: options.region,
-          map_ids: options.mapIds,
-          auth_referrer_policy: options.authReferrerPolicy,
-          callback: CALLBACK_NAME,
-        };
+        GoogleMapsLoader._cleanup(_GoogleMapsLoaderStatus.LOADING);
 
         let { retryCount = 2 } = options;
 
-        const { retryDelay = 2000 } = options;
-
-        for (const key in params) {
-          const param = params[key];
-
-          if (param) {
-            url.searchParams.set(
-              key,
-              typeof param === "string" ? param : param.join(",")
-            );
-          }
-        }
-
-        const createScript = () => {
+        const createScript = (url: string, retryDelay: number) => {
           const script = document.createElement("script");
 
           const { head } = document;
@@ -195,7 +174,7 @@ class Loader {
           script.onerror = (err: ErrorEvent) => {
             if (retryCount--) {
               setTimeout(() => {
-                createScript();
+                createScript(url, retryDelay);
 
                 head.removeChild(script);
               }, retryDelay);
@@ -216,25 +195,39 @@ class Loader {
             script.nonce = options.nonce;
           }
 
-          script.src = url.toString();
+          script.src = url;
 
           head.appendChild(script);
         };
 
-        window[CALLBACK_NAME] = Loader._resolve!;
+        window[CALLBACK_NAME as any] = GoogleMapsLoader._resolve! as any;
 
-        createScript();
+        createScript(
+          getQueryParameterAcc(
+            `${
+              options.url || "https://maps.googleapis.com/maps/api/js"
+            }?callback=${CALLBACK_NAME}`,
+            options
+          )("apiKey", "key")(
+            "version",
+            "v"
+          )("libraries")("channel")("client")("language")("region")(
+            "mapIds",
+            "map_ids"
+          )("authReferrerPolicy", "auth_referrer_policy")(),
+          options.retryDelay || 2000
+        );
       }
 
-      delete Loader._options;
+      delete GoogleMapsLoader._options;
 
-      delete Loader._reject;
+      delete GoogleMapsLoader._reject;
 
-      delete Loader._resolve;
+      delete GoogleMapsLoader._resolve;
     }
 
-    return Loader.completion;
+    return GoogleMapsLoader.completion;
   }
 }
 
-export default Loader;
+export default GoogleMapsLoader;
