@@ -5,7 +5,7 @@ import { EnumName, FILES_TO_COPY } from "./constants.mjs";
 import { getMainPackageJson } from "./utils.mjs";
 
 const run = async (outDir: string) => {
-  await fs.rm(outDir, { recursive: true, force: true });
+  // await fs.rm(outDir, { recursive: true, force: true });
 
   const entry = ["src/index.ts"];
 
