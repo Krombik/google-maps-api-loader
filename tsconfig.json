@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
+    "outDir": "build",
     "module": "esnext",
     "target": "es2020",
     "lib": ["dom", "esnext"],
@@ -8,19 +8,17 @@
     "sourceMap": true,
     "declaration": true,
     "esModuleInterop": true,
-    "noImplicitReturns": true,
+    "noImplicitReturns": false,
     "noImplicitThis": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "stripInternal": true,
+    "types": ["node", "google.maps"]
   },
-  "include": ["src", "scripts"],
-  "exclude": ["node_modules", "build"],
-  "ts-node": {
-    "esm": true,
-    "files": true,
-    "compilerOptions": { "noImplicitAny": false, "noImplicitThis": false }
-  }
+  "include": ["src", "tsup.config.ts"],
+  "exclude": ["node_modules", "build", "example"]
 }
