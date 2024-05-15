@@ -1,12 +1,12 @@
 {
   "name": "google-maps-js-api-loader",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "A lightweight JavaScript library for loading the Google Maps JavaScript API",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Krombik/google-maps-loader.git"
   },
-  "author": "",
+  "author": "Krombik",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/Krombik/google-maps-loader/issues"
@@ -15,17 +15,20 @@
   "type": "module",
   "source": "src/index.ts",
   "scripts": {
-    "build": "ts-node ./scripts/build.mts",
-    "release": "npm publish ./build"
+    "build": "tsup",
+    "watch": "tsup --watch",
+    "release": "tsup && npm publish ./build"
   },
   "devDependencies": {
-    "@swc/core": "^1.3.59",
-    "@types/google.maps": "^3.53.1",
-    "@types/node": "^20.2.1",
-    "prettier": "^2.8.8",
-    "ts-node": "^10.9.1",
-    "tsup": "^6.7.0",
-    "typescript": "^5.0.4"
+    "@swc/core": "^1.5.5",
+    "@types/google.maps": "^3.55.8",
+    "@types/node": "^20.12.11",
+    "prettier": "^3.2.5",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5"
+  },
+  "optionalDependencies": {
+    "@types/google.maps": ">=3.5"
   },
   "keywords": [
     "google",
