@@ -1,13 +1,35 @@
-# google-maps-loader
+# google-maps-js-api-loader
 
 ## Description
 
 Lightweight JavaScript library that simplifies the process of adding `Google Maps JavaScript API` to web application.
 
+## Installation
+
+using npm:
+
+```
+npm install --save google-maps-js-api-loader
+```
+
+or yarn:
+
+```
+yarn add google-maps-js-api-loader
+```
+
+or pnpm:
+
+```
+pnpm add google-maps-js-api-loader
+```
+
+---
+
 ## Example
 
 ```ts
-import { GoogleMapsLoader } from 'google-maps-loader';
+import { GoogleMapsLoader } from 'google-maps-js-api-loader';
 
 GoogleMapsLoader(
   {
