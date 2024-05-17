@@ -10,6 +10,7 @@ export type {
   GoogleMapsLoaderOptions,
   GoogleMapsLoaderStatus,
   GoogleMapsLibrary,
+  GoogleMapsLibraries,
   ScriptOptions,
 };
 
