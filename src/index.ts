@@ -74,11 +74,16 @@ declare class GoogleMapsLoader {
   ): GoogleMapsLibraries[L] | undefined;
 
   /**
+   * @returns error for {@link google.maps} script or `undefined`
+   */
+  static getError(): Error | undefined;
+  /**
    * @returns error for the provided {@link library} or `undefined`
    */
   static getError(
     library: GoogleMapsLibrary
   ):
+    | Error
     | google.maps.MapsServerError
     | google.maps.MapsNetworkError
     | google.maps.MapsRequestError
@@ -139,6 +144,8 @@ const googleMapsLoader = (() => {
     ];
 
     let status = Status.NONE;
+
+    let error: Error | undefined;
 
     const statuses = ['none', 'loading', 'loaded', 'error'] as const;
 
@@ -212,8 +219,9 @@ const googleMapsLoader = (() => {
     (GoogleMapsLoader as GoogleMapsLoader).get = (key) =>
       store.has(key) ? store.get(key)![2] : undefined;
 
-    (GoogleMapsLoader as GoogleMapsLoader).getError = (key) =>
-      store.has(key) ? store.get(key)![3] : undefined;
+    (GoogleMapsLoader as GoogleMapsLoader).getError = (
+      key?: GoogleMapsLibrary
+    ) => (key ? (store.has(key) ? store.get(key)![3] : undefined) : error);
 
     (GoogleMapsLoader as GoogleMapsLoader).getStatus = (
       key?: GoogleMapsLibrary
@@ -249,7 +257,7 @@ const googleMapsLoader = (() => {
         if (errorMessage) {
           status = Status.ERROR;
 
-          reject(new Error(errorMessage));
+          reject((error = new Error(errorMessage)));
         } else {
           status = Status.LOADING;
 
@@ -271,7 +279,7 @@ const googleMapsLoader = (() => {
               handleOnline(createScript, () => {
                 status = Status.ERROR;
 
-                reject(new Error('google.maps could not load'));
+                reject((error = new Error('google.maps could not load')));
               });
             };
 

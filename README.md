@@ -152,6 +152,8 @@ Returns the provided library or `undefined` if it has not been loaded yet.
 ### getError
 
 ```ts
+static getError(): Error | undefined;
+
 static getError(
   library: GoogleMapsLibrary
 ):
@@ -167,4 +169,4 @@ Returns the error for the provided library or `undefined`
 
 ## License
 
-MIT © [Krombik](https://github.com/Krombik)
+MIT © [Andrii Dubetskyi](https://github.com/Krombik)
