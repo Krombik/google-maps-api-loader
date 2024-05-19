@@ -1,6 +1,6 @@
 {
   "name": "google-maps-js-api-loader",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "description": "A lightweight JavaScript library for loading the Google Maps JavaScript API",
   "repository": {
     "type": "git",
@@ -27,8 +27,13 @@
     "tsup": "^8.0.2",
     "typescript": "^5.4.5"
   },
-  "optionalDependencies": {
-    "@types/google.maps": ">=3.5"
+  "peerDependencies": {
+    "@types/google.maps": ">=3.51.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/google.maps": {
+      "optional": true
+    }
   },
   "keywords": [
     "google",
